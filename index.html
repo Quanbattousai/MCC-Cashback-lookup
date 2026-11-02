@@ -88,6 +88,15 @@
   .mcchead .desc .bank{font-size:12px;font-weight:700;opacity:.9}
   .grouppill{display:inline-block;margin-top:8px;font-size:13.5px;font-weight:800;letter-spacing:.01em;
     color:var(--accent-ink);background:var(--surface);padding:5px 12px;border-radius:999px}
+  .mcchead{flex-wrap:wrap}
+  .mcchead .best{flex:1 1 100%;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.14);
+    border:1px solid rgba(255,255,255,.26);border-radius:12px;padding:8px 12px}
+  .mcchead .best{flex-wrap:wrap;row-gap:2px}
+  .mcchead .bflag{flex:1 1 100%;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;opacity:.9}
+  .mcchead .bname{flex:1;min-width:0;font-weight:700;font-size:14px;line-height:1.25}
+  .mcchead .bname i{font-style:normal;font-weight:500;opacity:.78;font-size:12px}
+  .mcchead .brate{font-family:var(--mono);font-weight:700;font-size:18px;white-space:nowrap}
+  .mcchead .best.none .bname{font-weight:600;font-size:13px;opacity:.9}
   #headbar:empty{display:none}
   .sfield{position:relative}
   .sfield #store{padding-right:44px}
@@ -571,13 +580,11 @@ function render(){
   const fromStore=activeStore&&activeStore.m===mcc;
   tick.classList.toggle("on",!!fromStore);
   let html="";
-  bar.innerHTML=`<div class="mcchead">
-    <div class="codebox">${String(mcc).padStart(4,"0")}</div>
+  const headTop=`<div class="codebox">${String(mcc).padStart(4,"0")}</div>
     <div class="desc">
       ${fromStore?`<div class="bank"><span class="ok">✓</span>${esc(activeStore.n)}</div>`:''}
       <div class="nm">${nmVi}</div><div class="en">${nmEn}</div>
-      <span class="grouppill">Nhóm: ${GROUP_VI[g]}</span></div>
-  </div>`;
+      <span class="grouppill">Nhóm: ${GROUP_VI[g]}</span></div>`;
   if(fromStore&&activeStore.h){
     html+=`<div class="callout" style="background:var(--warn-soft);color:var(--warn)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><div>${activeStore.h}</div></div>`;
   }
@@ -591,6 +598,18 @@ function render(){
   });
   cash.sort((a,b)=>b.res.rate-a.res.rate);
   point.sort((a,b)=>b.res.rate-a.res.rate);
+
+  // Thẻ hoàn tiền cao nhất — hiện trong ô ghim
+  let best;
+  if(cash.length){
+    const t=cash[0], ties=cash.filter(x=>x.res.rate===t.res.rate).length-1;
+    best=`<div class="best"><span class="bflag">★ Cao nhất</span>
+      <span class="bname">${t.card.bank} ${t.card.name}${ties?` <i>+${ties} thẻ ngang</i>`:''}</span>
+      <span class="brate">${t.res.rateText}</span></div>`;
+  }else{
+    best=`<div class="best none"><span class="bname">Không thẻ nào hoàn tiền mặt cho MCC này</span></div>`;
+  }
+  bar.innerHTML=`<div class="mcchead">${headTop}${best}</div>`;
 
   // Loại trừ đặc biệt cho VIB Max
   const maxExcluded=!!EXCL_NOTABLE[mcc];
