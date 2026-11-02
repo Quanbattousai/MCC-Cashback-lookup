@@ -41,6 +41,9 @@
     color-scheme:dark;
   }
   *{box-sizing:border-box}
+  /* Không cho kéo ngang/chéo; clip (không phải hidden) để position:sticky vẫn chạy */
+  html,body{max-width:100%;overflow-x:clip;overscroll-behavior-x:none}
+  body{touch-action:pan-y pinch-zoom}
   body{background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.5;
     -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
   .wrap{max-width:620px;margin:0 auto;
@@ -107,14 +110,15 @@
   .mcchead .best.none .bname{font-weight:600;font-size:13px;opacity:.9}
   #headbar:empty{display:none}
   .sfield{position:relative}
-  .sfield #store{padding-right:78px}
-  .clr{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:30px;height:30px;border:none;border-radius:50%;
-    background:var(--line);color:var(--muted);font-size:20px;line-height:1;cursor:pointer;display:none;
-    align-items:center;justify-content:center;padding:0}
-  .clr:hover{color:var(--ink)}
+  .sfield #store{padding:16px 100px 16px 14px;font-size:17px;min-height:54px}
+  .clr{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:44px;height:44px;border:none;border-radius:50%;
+    background:transparent;color:var(--muted);font-size:26px;line-height:1;cursor:pointer;display:none;
+    align-items:center;justify-content:center;padding:0;-webkit-tap-highlight-color:transparent;isolation:isolate}
+  .clr::before{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--line);z-index:-1}
+  .clr:hover,.clr:active{color:var(--ink)}
   #store:not(:placeholder-shown)~.clr{display:flex}
-  .tick{position:absolute;right:44px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:50%;
-    background:var(--accent);color:#fff;display:none;align-items:center;justify-content:center;font-size:15px;font-weight:800}
+  .tick{position:absolute;right:52px;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;
+    background:var(--accent);color:#fff;display:none;align-items:center;justify-content:center;font-size:19px;font-weight:800}
   .tick.on{display:flex}
   .mcchead .bank .ok{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;
     background:var(--surface);color:var(--accent-ink);font-size:11px;font-weight:800;margin-right:5px;vertical-align:1px}
@@ -122,6 +126,10 @@
   @media (max-width:700px){
     .wrap{display:flex;flex-direction:column}
     .wrap>.tag{align-self:flex-start}
+    /* gọn phần đầu để ô nhập + ô kết luận cùng nằm trên bàn phím */
+    .wrap{padding-block:16px 40px}
+    h1{font-size:20px;margin:10px 0 12px}
+    .sub{display:none}
     #headbar{order:-1;position:sticky;top:max(8px,env(safe-area-inset-top,0px));z-index:10;margin-bottom:14px}
     .mcchead{padding:12px 14px;gap:12px}
     .codebox{font-size:22px;padding:10px 12px}
@@ -679,6 +687,12 @@ document.getElementById("storeClear").addEventListener("click",()=>{
   render();
   storeEl.focus();
 });
+// iOS: bàn phím bật lên làm visual viewport bị đẩy lệch → giữ ô kết luận luôn dính mép trên màn hình thấy được
+if(window.visualViewport){
+  const vv=window.visualViewport, hb=document.getElementById("headbar");
+  const pin=()=>{hb.style.transform=(vv.offsetTop>1&&matchMedia("(max-width:700px)").matches)?`translateY(${Math.round(vv.offsetTop)}px)`:"";};
+  vv.addEventListener("scroll",pin);vv.addEventListener("resize",pin);
+}
 const storeEl=document.getElementById("store");
 storeEl.addEventListener("input",()=>{
   const s=lookupStore(storeEl.value);
