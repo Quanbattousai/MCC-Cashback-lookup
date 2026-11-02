@@ -511,12 +511,16 @@ function allStores(){ return USER_STORES.concat(STORES); } // cửa hàng của 
 function buildStoreList(){
   document.getElementById("storelist").innerHTML=allStores().map(s=>`<option value="${esc(s.n)}">`).join("");
 }
+// Bỏ dấu + hạ chữ thường: gõ "phuc long" vẫn ra "Phúc Long"
+const norm=s=>String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/Đ/g,"d").toLowerCase().trim();
 function lookupStore(txt){
-  txt=txt.trim().toLowerCase(); if(!txt)return null;
-  const A=allStores();
-  return A.find(s=>s.n.toLowerCase()===txt)
-      || A.find(s=>s.n.toLowerCase().startsWith(txt))
-      || A.find(s=>s.n.toLowerCase().includes(txt));
+  txt=norm(txt); if(!txt)return null;
+  const A=allStores().map(s=>({s,k:norm(s.n)}));
+  const words=txt.split(/\s+/);
+  return (A.find(x=>x.k===txt)
+      || A.find(x=>x.k.startsWith(txt))
+      || A.find(x=>x.k.includes(txt))
+      || A.find(x=>words.every(w=>x.k.includes(w))) || {}).s || null;
 }
 function renderUserChips(){
   const el=document.getElementById("userchips");
@@ -648,7 +652,11 @@ function render(){
 }
 
 const storeEl=document.getElementById("store");
-storeEl.addEventListener("input",()=>{const s=lookupStore(storeEl.value);if(s)applyStore(s);});
+storeEl.addEventListener("input",()=>{
+  const s=lookupStore(storeEl.value);
+  if(s)applyStore(s);
+  else if(activeStore){activeStore=null;render();} // gõ tiếp ra tên không có → bỏ dấu tick cũ
+});
 storeEl.addEventListener("change",()=>{const s=lookupStore(storeEl.value);if(s){storeEl.value=s.n;applyStore(s);}});
 document.getElementById("mcc").addEventListener("input",()=>{activeStore=null;if(storeEl)storeEl.value="";render();});
 document.getElementById("addBtn").addEventListener("click",addUserStore);
