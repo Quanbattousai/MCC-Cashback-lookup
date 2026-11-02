@@ -107,8 +107,13 @@
   .mcchead .best.none .bname{font-weight:600;font-size:13px;opacity:.9}
   #headbar:empty{display:none}
   .sfield{position:relative}
-  .sfield #store{padding-right:44px}
-  .tick{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:50%;
+  .sfield #store{padding-right:78px}
+  .clr{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:30px;height:30px;border:none;border-radius:50%;
+    background:var(--line);color:var(--muted);font-size:20px;line-height:1;cursor:pointer;display:none;
+    align-items:center;justify-content:center;padding:0}
+  .clr:hover{color:var(--ink)}
+  #store:not(:placeholder-shown)~.clr{display:flex}
+  .tick{position:absolute;right:44px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:50%;
     background:var(--accent);color:#fff;display:none;align-items:center;justify-content:center;font-size:15px;font-weight:800}
   .tick.on{display:flex}
   .mcchead .bank .ok{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;
@@ -210,7 +215,7 @@
 
   <div class="field">
     <label for="store">Tìm theo tên cửa hàng</label>
-    <div class="sfield"><input id="store" list="storelist" placeholder="Uniqlo, Muji, Grab, Phúc Long…" autocomplete="off" aria-label="Tên cửa hàng"><span class="tick" id="tick" aria-label="Đã tìm thấy cửa hàng">✓</span></div>
+    <div class="sfield"><input id="store" list="storelist" placeholder="Uniqlo, Muji, Grab, Phúc Long…" autocomplete="off" aria-label="Tên cửa hàng"><span class="tick" id="tick" aria-label="Đã tìm thấy cửa hàng">✓</span><button type="button" class="clr" id="storeClear" aria-label="Xoá tên cửa hàng">×</button></div>
     <datalist id="storelist"></datalist>
     <div class="orline"><span>hoặc nhập mã trực tiếp</span></div>
     <label for="mcc">Mã MCC (4 chữ số)</label>
@@ -665,6 +670,14 @@ document.getElementById("headbar").addEventListener("click",e=>{
   const open=b.getAttribute("aria-expanded")!=="true";
   b.setAttribute("aria-expanded",open);
   document.getElementById("tielist").hidden=!open;
+});
+document.getElementById("storeClear").addEventListener("click",()=>{
+  const hadStore=!!activeStore;
+  activeStore=null;
+  storeEl.value="";
+  if(hadStore)document.getElementById("mcc").value=""; // MCC này do cửa hàng suy ra → xoá luôn
+  render();
+  storeEl.focus();
 });
 const storeEl=document.getElementById("store");
 storeEl.addEventListener("input",()=>{
