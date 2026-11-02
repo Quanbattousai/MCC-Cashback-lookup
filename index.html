@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>html,body{margin:0}*{box-sizing:border-box}img{max-width:100%}[hidden]{display:none!important}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<title>Tra cứu MCC hoàn tiền</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: single-column lookup — numeric MCC input up top, result = ranked card sections below */
+  :root{
+    --bg:#f3f6f4; --surface:#ffffff; --surface-2:#f7faf8;
+    --ink:#15201d; --muted:#5e6d67; --line:#e3eae6;
+    --accent:#0c8f6c; --accent-soft:#e2f4ee; --accent-ink:#06603f;
+    --blue:#2d7dd2; --blue-soft:#e4effb;
+    --warn:#b9770e; --warn-soft:#fbf0dc;
+    --bad:#c0392b; --bad-soft:#fbe7e4;
+    --radius:16px; --shadow:0 1px 2px rgba(20,32,29,.05),0 8px 24px rgba(20,32,29,.06);
+    --font:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0d1412; --surface:#151e1b; --surface-2:#111a17;
+    --ink:#e7efeb; --muted:#92a39c; --line:#25312d;
+    --accent:#2cc096; --accent-soft:#143229; --accent-ink:#8fe6cd;
+    --blue:#5aa2e8; --blue-soft:#152333;
+    --warn:#e2a646; --warn-soft:#2e2410;
+    --bad:#e3766a; --bad-soft:#331e1b;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0d1412; --surface:#151e1b; --surface-2:#111a17;
+    --ink:#e7efeb; --muted:#92a39c; --line:#25312d;
+    --accent:#2cc096; --accent-soft:#143229; --accent-ink:#8fe6cd;
+    --blue:#5aa2e8; --blue-soft:#152333;
+    --warn:#e2a646; --warn-soft:#2e2410;
+    --bad:#e3766a; --bad-soft:#331e1b;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.5;
+    -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+  .wrap{max-width:620px;margin:0 auto;
+    padding-left:max(16px,env(safe-area-inset-left,0px));
+    padding-right:max(16px,env(safe-area-inset-right,0px));
+    padding-block:28px 48px}
+  .tag{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-ink);
+    background:var(--accent-soft);display:inline-block;padding:4px 10px;border-radius:999px}
+  h1{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:14px 0 6px;text-wrap:balance}
+  .sub{color:var(--muted);font-size:14.5px;margin:0 0 22px;max-width:52ch}
+
+  .field{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:18px}
+  .field label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:9px}
+  #mcc{width:100%;min-width:0;font-family:var(--mono);font-size:30px;font-weight:600;letter-spacing:.06em;
+    text-align:center;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;
+    background:var(--surface-2);color:var(--ink);transition:border-color .15s}
+  #mcc:focus{outline:none;border-color:var(--accent)}
+  #mcc::placeholder{color:var(--muted);opacity:.5}
+  #store{width:100%;min-width:0;font-family:var(--font);font-size:16px;font-weight:500;
+    padding:11px 14px;border:1.5px solid var(--line);border-radius:12px;
+    background:var(--surface-2);color:var(--ink);transition:border-color .15s}
+  #store:focus{outline:none;border-color:var(--accent)}
+  #store::placeholder{color:var(--muted);opacity:.6}
+  .orline{display:flex;align-items:center;gap:10px;margin:14px 0 10px;color:var(--muted);font-size:12px}
+  .orline::before,.orline::after{content:"";flex:1;height:1px;background:var(--line)}
+  .storehint{display:flex;gap:8px;align-items:flex-start;margin-top:4px;font-size:12.5px;color:var(--warn)}
+  .storehint svg{flex:none;margin-top:2px}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+  .chip{font-size:12.5px;font-family:var(--mono);font-weight:500;color:var(--muted);
+    background:var(--surface-2);border:1px solid var(--line);border-radius:999px;
+    padding:5px 11px;cursor:pointer;transition:all .15s}
+  .chip b{color:var(--ink);font-weight:600}
+  .chip:hover{border-color:var(--accent);color:var(--accent-ink)}
+
+  .result{margin-top:20px;display:flex;flex-direction:column;gap:18px}
+
+  .mcchead{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px}
+  .codebox{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--ink);
+    background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;line-height:1}
+  .mcchead .desc{min-width:0;flex:1}
+  .mcchead .desc .nm{font-weight:700;font-size:16px;line-height:1.3}
+  .mcchead .desc .en{font-size:12.5px;color:var(--muted);margin-top:1px}
+  .grouppill{font-size:11.5px;font-weight:600;color:var(--accent-ink);background:var(--accent-soft);
+    padding:3px 9px;border-radius:999px;white-space:nowrap}
+
+  .section-h{display:flex;align-items:baseline;gap:8px;margin:0 2px -6px}
+  .section-h .st{font-size:13px;font-weight:700;letter-spacing:.02em}
+  .section-h .ss{font-size:12px;color:var(--muted)}
+
+  .rows{display:flex;flex-direction:column;gap:9px}
+  .crow{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:13px 15px;
+    display:flex;gap:12px;align-items:flex-start}
+  .crow.top{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 35%,transparent)}
+  .crow .main{flex:1;min-width:0}
+  .crow .bank{font-size:11.5px;color:var(--muted);font-weight:600}
+  .crow .cn{font-weight:700;font-size:14.5px;line-height:1.25;margin-top:1px}
+  .crow .lbl{font-size:12.5px;color:var(--accent-ink);font-weight:600;margin-top:4px}
+  .crow .meta{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45}
+  .crow .right{text-align:right;flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+  .crow .rt{font-family:var(--mono);font-weight:700;font-size:18px;color:var(--accent-ink);white-space:nowrap}
+  .crow .rt.pts{color:var(--blue);font-size:14px}
+  .badge{font-size:10px;font-weight:700;letter-spacing:.03em;padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .b-mcc{color:var(--accent-ink);background:var(--accent-soft)}
+  .b-cat{color:var(--blue);background:var(--blue-soft)}
+  .b-mer{color:var(--warn);background:var(--warn-soft)}
+  .topflag{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent-ink)}
+
+  .callout{border-radius:13px;padding:14px 16px;display:flex;gap:10px;align-items:flex-start;font-size:13.5px}
+  .callout svg{flex:none;margin-top:2px}
+  .callout.good{background:var(--accent-soft);color:var(--accent-ink)}
+  .callout.bad{background:var(--bad-soft);color:var(--bad)}
+  .callout b{font-weight:700}
+
+  .muted-block{background:var(--surface-2);border:1px dashed var(--line);border-radius:12px;padding:12px 15px;
+    font-size:12.5px;color:var(--muted);line-height:1.6}
+  .muted-block b{color:var(--ink);font-weight:600}
+
+  details.learn{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+  details.learn summary{cursor:pointer;padding:14px 16px;font-weight:600;font-size:14px;list-style:none;
+    display:flex;justify-content:space-between;align-items:center}
+  details.learn summary::-webkit-details-marker{display:none}
+  details.learn summary::after{content:"+";color:var(--muted);font-weight:400;font-size:20px}
+  details.learn[open] summary::after{content:"–"}
+  .learn-body{padding:0 16px 16px;font-size:13.5px;color:var(--muted);line-height:1.65}
+  .learn-body b{color:var(--ink)}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+  .legend .badge{cursor:default}
+  .cats5{display:flex;flex-direction:column;gap:7px;margin:14px 0}
+  .cat5{display:flex;align-items:flex-start;gap:11px;padding:10px 12px;border-radius:11px;
+    background:color-mix(in srgb,var(--cc) 13%,transparent);border:1px solid color-mix(in srgb,var(--cc) 32%,transparent)}
+  .cat5 .cdot{width:9px;height:9px;border-radius:50%;background:var(--cc);margin-top:6px;flex:none}
+  .cat5 .cnm{font-weight:700;color:var(--ink);font-size:13.5px}
+  .cat5 .cex{color:var(--muted);font-size:12.5px}
+  .cat-food{--cc:#e0792e} .cat-shop{--cc:#0c8f6c} .cat-travel{--cc:#2d7dd2}
+  .cat-fun{--cc:#9b59b6} .cat-online{--cc:#c0392b}
+
+  .addgrid{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+  .addgrid #addName{flex:1 1 100%}
+  .addgrid input,.addgrid select{font-family:var(--font);font-size:14px;padding:9px 11px;border:1.5px solid var(--line);
+    border-radius:10px;background:var(--surface-2);color:var(--ink);min-width:0}
+  .addgrid #addCat{flex:1 1 160px}
+  .addgrid #addMcc{flex:1 1 110px;font-family:var(--mono)}
+  .addgrid input:focus,.addgrid select:focus{outline:none;border-color:var(--accent)}
+  #addBtn{flex:0 0 auto;font-family:var(--font);font-weight:700;font-size:14px;padding:9px 20px;border:none;
+    border-radius:10px;background:var(--accent);color:#fff;cursor:pointer}
+  #addBtn:hover{background:var(--accent-ink)}
+  .addnote{font-size:12px;color:var(--muted);margin-top:9px;line-height:1.5}
+  .userchips{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
+  .uchip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;background:var(--surface-2);
+    border:1px solid var(--line);border-radius:999px;padding:4px 6px 4px 11px;color:var(--ink)}
+  .uchip b{font-family:var(--mono);color:var(--muted);font-weight:500}
+  .uchip button{border:none;background:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0 3px}
+  .uchip button:hover{color:var(--bad)}
+  .foot{font-size:12px;color:var(--muted);line-height:1.6;text-align:center;margin-top:4px}
+  .empty{padding:26px 18px;text-align:center;color:var(--muted);font-size:14px;
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap">
+</head>
+<body>
+<div class="wrap">
+  <span class="tag">Tra cứu hoàn tiền theo MCC</span>
+  <h1>Giao dịch này thẻ nào hoàn tiền cao nhất?</h1>
+  <p class="sub">Nhập mã MCC, xem thẻ của VIB, Techcombank, VPBank hoàn bao nhiêu và nhóm chi tiêu nào cao nhất. VIB map theo MCC chuẩn; Techcombank & VPBank theo nhóm ngành (tham khảo).</p>
+
+  <div class="field">
+    <label for="store">Tìm theo tên cửa hàng</label>
+    <input id="store" list="storelist" placeholder="Uniqlo, Muji, Grab, Phúc Long…" autocomplete="off" aria-label="Tên cửa hàng">
+    <datalist id="storelist"></datalist>
+    <div class="orline"><span>hoặc nhập mã trực tiếp</span></div>
+    <label for="mcc">Mã MCC (4 chữ số)</label>
+    <input id="mcc" inputmode="numeric" maxlength="4" placeholder="5812" autocomplete="off" aria-label="Mã MCC">
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <details class="learn" id="addbox" style="margin-top:14px">
+    <summary>➕ Thêm cửa hàng của bạn</summary>
+    <div class="learn-body">
+      <div class="addgrid">
+        <input id="addName" placeholder="Tên cửa hàng (vd: Annam Gourmet)" autocomplete="off">
+        <select id="addCat" aria-label="Nhóm ngành">
+          <option value="5812">Ẩm thực (nhà hàng, cafe)</option>
+          <option value="5651">Mua sắm (thời trang, bách hoá)</option>
+          <option value="5411">Siêu thị / tiện lợi</option>
+          <option value="7011">Du lịch (khách sạn, vé)</option>
+          <option value="7999">Giải trí</option>
+          <option value="4121">Di chuyển (taxi, xăng)</option>
+          <option value="8011">Y tế / nhà thuốc</option>
+          <option value="8211">Giáo dục</option>
+          <option value="5999">Online / dịch vụ số</option>
+          <option value="6300">Bảo hiểm</option>
+          <option value="7311">Quảng cáo online</option>
+          <option value="4900">Tiện ích (điện/nước/viễn thông)</option>
+        </select>
+        <input id="addMcc" inputmode="numeric" maxlength="4" placeholder="MCC (tuỳ chọn)" autocomplete="off">
+        <button id="addBtn" type="button">Thêm</button>
+      </div>
+      <div class="addnote">Chọn nhóm ngành cho nhanh, hoặc nhập mã MCC chính xác nếu bạn biết (ưu tiên mã MCC). Cửa hàng bạn thêm được lưu trên trình duyệt này.</div>
+      <div class="userchips" id="userchips"></div>
+    </div>
+  </details>
+
+  <div class="result" id="result"></div>
+
+  <details class="learn">
+    <summary>Đọc kết quả thế nào &amp; nguồn dữ liệu</summary>
+    <div class="learn-body">
+      Mỗi thẻ có một nhãn cho biết độ chắc chắn của việc phân loại:
+      <div class="legend">
+        <span class="badge b-mcc">MCC</span><span class="badge b-cat">Nhóm ngành</span><span class="badge b-mer">Merchant</span>
+      </div>
+      <b>MCC</b> — map chính xác theo danh sách MCC trong thể lệ (các thẻ VIB). <b>Nhóm ngành</b> — bank chỉ công bố theo nhóm (ăn uống, du lịch…), nên suy ra gần đúng từ MCC. <b>Merchant</b> — ưu đãi chỉ tại cửa hàng cụ thể (Shopee, MWG…), không xác định được bằng MCC.
+      <br><br>Kết quả tách 3 phần: <b>Hoàn tiền mặt (%)</b>, <b>Tích điểm/xu</b> (quy đổi khác nhau, không so trực tiếp với %), và <b>Ưu đãi theo cửa hàng</b>.
+      <br><br><b>Riêng VIB Max Card — chọn 1 trong 5 nhóm:</b>
+      <div class="cats5">
+        <div class="cat5 cat-food"><span class="cdot"></span><div><div class="cnm">Ẩm thực</div><div class="cex">Nhà hàng, quán ăn, cafe, fast food (MCC 5811–5814)</div></div></div>
+        <div class="cat5 cat-shop"><span class="cdot"></span><div><div class="cnm">Mua sắm</div><div class="cex">Thời trang, bách hoá, mỹ phẩm, nhà sách, trang sức…</div></div></div>
+        <div class="cat5 cat-travel"><span class="cdot"></span><div><div class="cnm">Du lịch</div><div class="cex">Khách sạn, vé máy bay, đại lý tour, thuê xe (MCC 3xxx, 7011…)</div></div></div>
+        <div class="cat5 cat-fun"><span class="cdot"></span><div><div class="cnm">Giải trí</div><div class="cex">Rạp phim, gym, game, công viên, sự kiện, bowling…</div></div></div>
+        <div class="cat5 cat-online"><span class="cdot"></span><div><div class="cnm">Giao dịch trực tuyến</div><div class="cex">Mọi giao dịch quẹt online — trừ bảo hiểm (6300) và MCC 7399</div></div></div>
+      </div>
+      Max Card: Starter 0,5% · Plus 5% · Pro 8% · Elite 10%; ngoài nhóm 0,1%. Trần 500.000–1.500.000 điểm/kỳ. 1 điểm = 1 VND.
+      <br><br>Căn cứ hoàn tiền là <b>MCC do merchant đăng ký</b> — đôi khi lệch ngành thực tế (Shopee hay bị gán 5411, Muji bị 5499). Tỷ lệ Techcombank/VPBank là mức "lên tới" theo công bố, nhiều thẻ kèm điều kiện chi tiêu tối thiểu, đăng ký, hoặc theo từng kỳ khuyến mãi — cần kiểm tra thể lệ chính thức trước khi quyết định.
+    </div>
+  </details>
+
+  <p class="foot">Dữ liệu tổng hợp từ thể lệ &amp; trang sản phẩm của VIB, Techcombank, VPBank (tham khảo, có thể thay đổi). Cập nhật 11/2026.</p>
+</div>
+
+<script>
+/* ===================== MCC → nhóm ===================== */
+// Bộ MCC chính xác theo thể lệ VIB Max Card
+const VIB_MUA_SAM=new Set([7296,7251,5999,5998,5997,5996,5995,5994,5993,5992,5977,5950,5949,5948,5947,5946,5945,5944,5943,5942,5941,5940,5937,5935,5933,5699,5698,5697,5691,5681,5661,5655,5651,5641,5631,5621,5611,5331,5311,5310,5309,5301,5300,5298,5296,5262,5200,5193,5192,5139,5137,5131,5111,5099,5094,5021,46]);
+const VIB_AM_THUC=new Set([5811,5812,5813,5814]);
+const VIB_GIAI_TRI=new Set([5815,5816,7829,7832,7841,7911,7922,7929,7932,7933,7941,7991,7992,7993,7994,7996,7997,7998,7999]);
+const VIB_DU_LICH=new Set([7011,3998,4511,4722,70,10]); for(let m=3000;m<=3999;m++)VIB_DU_LICH.add(m);
+function vibCat(mcc){
+  if(VIB_AM_THUC.has(mcc))return"Ẩm thực";
+  if(VIB_DU_LICH.has(mcc))return"Du lịch";
+  if(VIB_GIAI_TRI.has(mcc))return"Giải trí";
+  if(VIB_MUA_SAM.has(mcc))return"Mua sắm";
+  return null;
+}
+// Nhóm ngành tổng quát (dùng cho Techcombank/VPBank)
+const G_GROCERY=new Set([5411,5422,5451,5462,5499,5921]);
+const G_FUEL=new Set([5541,5542]);
+const G_TRANSPORT=new Set([4111,4112,4121,4131,4784,7523]);
+const G_TRAVEL=new Set([7011,4511,4722,4411,7512]); for(let m=3000;m<=3999;m++)G_TRAVEL.add(m);
+const G_HEALTH=new Set([8011,8021,8041,8050,8062,8071,8099,5912,7298]);
+const G_EDU=new Set([8211,8220,8241,8299]);
+const G_SHOP_EXTRA=new Set([5732,5722,5712,5733,5735,5045,5211]);
+function groupOf(mcc){
+  if(VIB_AM_THUC.has(mcc))return"dining";
+  if(G_GROCERY.has(mcc))return"grocery";
+  if(G_FUEL.has(mcc))return"fuel";
+  if(G_TRAVEL.has(mcc))return"travel";
+  if(G_TRANSPORT.has(mcc))return"transport";
+  if(VIB_GIAI_TRI.has(mcc))return"entertainment";
+  if(G_HEALTH.has(mcc))return"health";
+  if(G_EDU.has(mcc))return"education";
+  if(mcc===6300)return"insurance";
+  if(mcc===4900||mcc===4899)return"utilities";
+  if(mcc===4814||mcc===4816||mcc===4812||mcc===4821)return"telecom";
+  if(mcc===7311)return"ads";
+  if(VIB_MUA_SAM.has(mcc)||G_SHOP_EXTRA.has(mcc))return"shopping";
+  return"other";
+}
+const GROUP_VI={dining:"Ẩm thực",grocery:"Siêu thị / tạp hoá",fuel:"Xăng dầu",travel:"Du lịch",
+  transport:"Di chuyển",entertainment:"Giải trí",health:"Y tế",education:"Giáo dục",insurance:"Bảo hiểm",
+  utilities:"Tiện ích (điện/nước)",telecom:"Viễn thông",ads:"Quảng cáo online",shopping:"Mua sắm",other:"Khác"};
+
+/* ===================== Từ điển mô tả MCC ===================== */
+const MCC_DESC={
+  10:["Hàng không (mã hãng)","Airline"],70:["Hàng không (mã hãng)","Airline"],46:["Bán lẻ khác","Misc. retail"],
+  3000:["Hãng hàng không","Airlines"],3501:["Khách sạn","Hotels"],3998:["Khách sạn","Lodging"],
+  4111:["Giao thông công cộng","Transit"],4112:["Tàu hoả","Railways"],4121:["Taxi / xe công nghệ (Grab…)","Taxicabs / rideshare"],
+  4411:["Tàu / du thuyền","Cruise lines"],4511:["Hàng không","Airlines"],4722:["Đại lý du lịch","Travel agencies"],
+  4784:["Phí cầu đường","Tolls"],4812:["Thiết bị viễn thông","Telecom equipment"],4814:["Viễn thông / điện thoại","Telecom services"],
+  4816:["Dịch vụ mạng / internet","Computer network"],4899:["Truyền hình cáp","Cable / pay TV"],4900:["Điện / nước / gas","Utilities"],
+  5045:["Máy tính / thiết bị","Computers"],5094:["Trang sức / kim hoàn","Jewelry"],5111:["Văn phòng phẩm","Stationery"],
+  5200:["Đồ gia dụng / xây dựng","Home supply"],5211:["Vật liệu xây dựng","Building materials"],5300:["Bán sỉ / kho","Wholesale"],
+  5311:["Cửa hàng bách hoá","Department stores"],5331:["Cửa hàng tổng hợp","Variety stores"],
+  5411:["Siêu thị / tạp hoá","Grocery / supermarket"],5422:["Thực phẩm tươi","Food — meat"],5451:["Sữa / đồ uống","Dairy"],
+  5462:["Tiệm bánh","Bakeries"],5499:["Cửa hàng thực phẩm / tiện lợi","Convenience / food"],
+  5511:["Ô tô (đại lý)","Car dealers"],5541:["Trạm xăng","Service stations"],5542:["Trạm xăng tự động","Automated fuel"],
+  5611:["Thời trang nam","Men's clothing"],5621:["Thời trang nữ","Women's clothing"],5631:["Phụ kiện nữ","Women's accessories"],
+  5641:["Đồ trẻ em","Children's wear"],5651:["Thời trang gia đình","Family clothing"],5655:["Đồ thể thao","Sportswear"],
+  5661:["Giày dép","Shoe stores"],5681:["Lông thú","Furriers"],5691:["Thời trang nam & nữ","Clothing"],
+  5697:["May đo / sửa đồ","Tailors"],5699:["Thời trang khác","Apparel — misc"],5712:["Nội thất","Furniture"],
+  5722:["Đồ gia dụng điện","Appliances"],5732:["Điện tử","Electronics"],5733:["Nhạc cụ","Music stores"],
+  5734:["Phần mềm máy tính","Computer software"],5735:["Đĩa nhạc / phim","Record stores"],
+  5811:["Dịch vụ tiệc / catering","Caterers"],5812:["Nhà hàng","Restaurants"],5813:["Quán bar / pub","Bars"],
+  5814:["Quán ăn nhanh","Fast food"],5815:["Nội dung số (nhạc/phim)","Digital media"],5816:["Game kỹ thuật số","Digital games"],
+  5912:["Nhà thuốc","Pharmacy"],5921:["Cửa hàng rượu bia","Liquor stores"],5941:["Đồ thể thao","Sporting goods"],
+  5942:["Nhà sách","Book stores"],5943:["Văn phòng phẩm","Office supply"],5944:["Trang sức / đồng hồ","Jewelry / watches"],
+  5945:["Đồ chơi / game","Toy / hobby"],5946:["Máy ảnh","Camera stores"],5947:["Quà tặng / lưu niệm","Gift / novelty"],
+  5948:["Đồ da / vali","Leather goods"],5949:["Vải / may vá","Fabric"],5950:["Pha lê / thuỷ tinh","Glassware"],
+  5964:["Bán hàng qua catalog","Direct marketing"],5969:["Bán hàng trực tiếp khác","Direct marketing"],
+  5977:["Mỹ phẩm","Cosmetics"],5992:["Hoa tươi","Florists"],5993:["Thuốc lá","Cigar stores"],5994:["Sạp báo","News dealers"],
+  5995:["Thú cưng / pet","Pet shops"],5999:["Bán lẻ khác","Misc. retail"],6300:["Bảo hiểm","Insurance"],
+  6513:["Bất động sản","Real estate"],7011:["Khách sạn / lưu trú","Hotels / lodging"],7210:["Giặt là","Laundry"],
+  7230:["Làm tóc / làm đẹp","Salon"],7298:["Spa / chăm sóc","Health & beauty spa"],7299:["Dịch vụ cá nhân","Personal services"],
+  7311:["Quảng cáo (Google/FB/TikTok Ads)","Advertising"],7372:["Lập trình / phần mềm","Programming"],
+  7399:["Dịch vụ doanh nghiệp","Business services"],7512:["Thuê xe","Car rental"],7523:["Bãi đỗ xe","Parking"],
+  7538:["Sửa ô tô","Auto service"],7829:["Sản xuất phim","Film production"],7832:["Rạp chiếu phim","Cinemas"],
+  7841:["Cho thuê phim","Video rental"],7911:["Khiêu vũ","Dance studios"],7922:["Nhà hát / vé sự kiện","Theatrical / ticket"],
+  7929:["Ban nhạc / giải trí","Bands"],7932:["Bi-a","Billiards"],7933:["Bowling","Bowling"],7941:["Thể thao / CLB","Sports clubs"],
+  7991:["Điểm tham quan","Tourist attractions"],7992:["Sân golf công cộng","Public golf"],7993:["Giải trí điện tử","Video amusement"],
+  7994:["Trung tâm game","Game arcades"],7995:["Cá cược / xổ số","Betting"],7996:["Công viên giải trí","Amusement parks"],
+  7997:["CLB thể thao / gym","Membership clubs / gym"],7998:["Thuỷ cung / sở thú","Aquariums / zoos"],7999:["Giải trí khác","Recreation"],
+  8011:["Bác sĩ / phòng khám","Doctors"],8021:["Nha khoa","Dentists"],8041:["Chỉnh hình / VLTL","Chiropractors"],
+  8050:["Điều dưỡng","Nursing care"],8062:["Bệnh viện","Hospitals"],8071:["Xét nghiệm y khoa","Medical labs"],
+  8099:["Dịch vụ y tế khác","Health services"],8211:["Trường học","Schools"],8220:["Đại học / cao đẳng","Colleges"],
+  8241:["Học hàm thụ","Correspondence schools"],8299:["Giáo dục khác","Educational services"],8398:["Từ thiện","Charities"],
+  8661:["Tổ chức tôn giáo","Religious orgs"],8999:["Dịch vụ chuyên môn","Professional services"],
+  9222:["Nộp phạt","Fines"],9311:["Nộp thuế","Tax payments"],9399:["Dịch vụ chính phủ","Government"],9402:["Bưu chính","Postal"]
+};
+function describe(mcc){
+  if(MCC_DESC[mcc])return MCC_DESC[mcc];
+  if(mcc>=3000&&mcc<=3999)return["Hãng hàng không / khách sạn / thuê xe","Airline / hotel / car rental"];
+  return["Ngành chưa có trong từ điển","Unknown"];
+}
+
+/* ===================== Dữ liệu thẻ =====================
+   Mỗi thẻ: match(mcc,g,online) trả về null (không ưu đãi nhóm này) hoặc
+   {rate:số để xếp hạng, rateText, label, meta}. kind: 'cash' | 'point' | 'merchant'. */
+// MCC bị loại trừ hẳn / không tính là giao dịch online hưởng ưu đãi (theo thể lệ Max)
+const EXCL_NOTABLE={4900:"tiện ích điện/nước",4814:"viễn thông",4899:"truyền hình cáp",4816:"internet",6300:"bảo hiểm",7311:"quảng cáo online",7399:"dịch vụ doanh nghiệp"};
+function isOnlineEligible(mcc){return !(mcc in EXCL_NOTABLE);}
+
+const CARDS=[
+  /* ---- VIB (map theo MCC) ---- */
+  {bank:"VIB",name:"Max Card",conf:"mcc",kind:"cash",
+   match(mcc,g,online){
+     if(EXCL_NOTABLE[mcc])return null; // loại trừ (tiện ích, viễn thông, bảo hiểm, quảng cáo…)
+     const c=vibCat(mcc);
+     if(c)return{rate:10,rateText:"lên tới 10%",label:c,meta:"Starter 0,5% · Plus 5% · Pro 8% · Elite 10% · trần 0,5–1,5tr/kỳ"};
+     if(online)return{rate:10,rateText:"lên tới 10%",label:"Giao dịch trực tuyến",meta:"Nếu quẹt online · trần 0,5–1,5tr/kỳ"};
+     return null;
+   }},
+  {bank:"VIB",name:"Super Card",conf:"mcc",kind:"cash",
+   match(mcc,g,online){
+     const c=vibCat(mcc);
+     if(c==="Ẩm thực"||c==="Mua sắm"||c==="Du lịch")
+       return{rate:15,rateText:"lên tới 15%",label:c,meta:"Chọn nhóm ẩm thực / mua sắm / du lịch · tỷ lệ theo thể lệ từng kỳ"};
+     return null;
+   }},
+  {bank:"VIB",name:"Cash Back",conf:"mcc",kind:"cash",
+   match(mcc,g,online){
+     if(g==="dining"||g==="entertainment"||g==="ads"||g==="insurance")
+       return{rate:10,rateText:"lên tới 10%",label:GROUP_VI[g],meta:"5/8/10% theo chi tiêu kỳ trước · trần 2tr/kỳ, 24tr/năm · hoàn cả bảo hiểm & quảng cáo online"};
+     return null;
+   }},
+  {bank:"VIB",name:"Family Link",conf:"mcc",kind:"cash",
+   match(mcc,g,online){
+     if(g==="education"||g==="health"||g==="insurance")
+       return{rate:10,rateText:"lên tới 10%",label:GROUP_VI[g],meta:"5/8/10% theo chi tiêu kỳ trước · trần 1tr/kỳ (500k/nhóm)"};
+     return null;
+   }},
+  {bank:"VIB",name:"Online Plus 2in1",conf:"mcc",kind:"cash",
+   match(mcc,g,online){
+     if(online)return{rate:5,rateText:"5% / 3%",label:"Giao dịch trực tuyến",meta:"5% online quốc tế · 3% trong nước · trần 600k/kỳ"};
+     return null;
+   }},
+  /* ---- Techcombank (theo nhóm ngành) ---- */
+  {bank:"Techcombank",name:"Private Visa Infinite",conf:"cat",kind:"cash",
+   match(mcc,g){ if(g==="dining")return{rate:10,rateText:"10% / 5%",label:"Ẩm thực",meta:"10% nhà hàng đối tác · 5% nhà hàng khác · trần 5tr/tháng"}; return null;}},
+  {bank:"Techcombank",name:"Priority Visa Signature",conf:"cat",kind:"cash",
+   match(mcc,g){
+     if(g==="dining")return{rate:10,rateText:"10% / 5%",label:"Ẩm thực",meta:"10% nhà hàng đối tác · 5% khác · trần 3tr/tháng"};
+     if(g==="travel")return{rate:3,rateText:"3%",label:"Du lịch & khách sạn",meta:"Trần 3tr/tháng"};
+     return null;}},
+  {bank:"Techcombank",name:"Visa Signature",conf:"cat",kind:"cash",
+   match(mcc,g){
+     if(g==="dining")return{rate:10,rateText:"10% / 5%",label:"Ẩm thực",meta:"10% nhà hàng đối tác · 5% khác · trần 2tr/tháng"};
+     if(g==="travel")return{rate:3,rateText:"3%",label:"Du lịch & khách sạn",meta:"Trần 2tr/tháng"};
+     return null;}},
+  /* ---- Techcombank (tích điểm U-Point) ---- */
+  {bank:"Techcombank",name:"Spark",conf:"cat",kind:"point",
+   match(mcc,g,online){
+     if(g==="travel"||g==="shopping"||g==="entertainment")return{rate:80,rateText:"80đ / 1.000đ",label:GROUP_VI[g],meta:"Nhóm ưu tiên (chọn 1) · trần 500k điểm/tháng"};
+     if(g==="dining"||online)return{rate:20,rateText:"20đ / 1.000đ",label:g==="dining"?"Ẩm thực":"Online",meta:"Trần 500k điểm/tháng"};
+     return null;}},
+  {bank:"Techcombank",name:"Everyday",conf:"cat",kind:"point",
+   match(mcc,g,online){ if(online)return{rate:8,rateText:"8% / 5%",label:"Online",meta:"8% quốc tế · 5% trong nước (điểm) · tối thiểu 200k/giao dịch"}; return null;}},
+  {bank:"Techcombank",name:"Visa Eco",conf:"cat",kind:"point",
+   match(mcc,g){ if(g==="insurance"||g==="education")return{rate:3,rateText:"3%",label:GROUP_VI[g],meta:"Điểm thưởng · tối thiểu 1tr/giao dịch · trần 800k điểm/tháng"}; return null;}},
+  /* ---- VPBank (tích điểm/nhóm ngành) ---- */
+  {bank:"VPBank",name:"GameON Mastercard",conf:"cat",kind:"point",
+   match(mcc,g){ if(g==="entertainment")return{rate:10,rateText:"lên tới 10%",label:"Giải trí số",meta:"Giải trí số & điện tử (điểm thưởng)"}; return null;}},
+];
+
+/* Thẻ ưu đãi theo cửa hàng cụ thể — không xác định bằng MCC, luôn hiển thị để tham khảo */
+const MERCHANT_CARDS=[
+  {bank:"VPBank",name:"S Rewards Mastercard",deal:"Hoàn tới 12% bằng Shopee xu tại Shopee & ShopeeFood"},
+  {bank:"VPBank",name:"Super Shopee Platinum",deal:"Hoàn 10% tại Shopee (đã đóng đăng ký)"},
+  {bank:"VPBank",name:"Shopee Platinum",deal:"Hoàn 6% tại Shopee (đã đóng đăng ký)"},
+  {bank:"VPBank",name:"MWG Mastercard",deal:"Hoàn 10% trong hệ sinh thái MWG (TGDĐ, Điện Máy Xanh, Bách Hoá Xanh)"},
+];
+/* Thẻ chưa đủ dữ liệu phân nhóm theo MCC */
+const UNKNOWN_CARDS=[
+  {bank:"VPBank",name:"Z JCB",note:"hoàn tới 15% — thể lệ không nêu rõ nhóm MCC"},
+  {bank:"VPBank",name:"Diamond World",note:"hoàn tới 10% — chưa rõ nhóm áp dụng"},
+  {bank:"VPBank",name:"Flex Mastercard 2in1",note:"tích tới 8% điểm LynkiD — chưa rõ nhóm"},
+];
+
+/* ===================== Danh bạ cửa hàng → MCC thường gặp =====================
+   mcc = mã ngành thường gặp (tham khảo). hint = cảnh báo khi hay bị gán lệch. */
+const STORES=[
+  // Thời trang / mua sắm
+  {n:"Uniqlo",m:5651},{n:"H&M",m:5651},{n:"Zara",m:5651},{n:"Mango",m:5651},{n:"Routine",m:5651},
+  {n:"Muji",m:5999,h:"Có nơi gán 5499 (thực phẩm) → rớt khỏi nhóm Mua sắm"},
+  {n:"Miniso",m:5999},{n:"KKV",m:5999},{n:"Flying Tiger",m:5999},{n:"Daiso",m:5331},
+  {n:"Takashimaya",m:5311},{n:"AEON Mall",m:5311},{n:"Lotte Department Store",m:5311},{n:"Parkson",m:5311},
+  {n:"Kohnan (đồ gia dụng)",m:5200},{n:"Nitori",m:5712},{n:"JYSK",m:5712},
+  {n:"Watsons",m:5977,h:"Có nơi gán 5912 (nhà thuốc) → rớt khỏi nhóm Mua sắm"},
+  {n:"Guardian",m:5977},{n:"Matsumoto Kiyoshi",m:5977,h:"Có nơi gán 5912 (nhà thuốc)"},
+  {n:"Fahasa (nhà sách)",m:5942},{n:"Phương Nam (nhà sách)",m:5942},
+  {n:"FPT Shop",m:5732},{n:"Thế Giới Di Động",m:5732},{n:"CellphoneS",m:5732},{n:"Điện Máy Xanh",m:5722},
+  {n:"PNJ (trang sức)",m:5944},
+  // Sàn TMĐT (online)
+  {n:"Shopee",m:5411,h:"Sàn TMĐT thường bị gán 5411 → không vào nhóm Mua sắm, nhưng vào nhóm Online"},
+  {n:"TikTok Shop",m:5999,h:"Mã không cố định (5999/5311/5964) → ưu tiên tính nhóm Online"},
+  {n:"Lazada",m:5411,h:"Thường gán 5411 → tính qua nhóm Online"},
+  {n:"Tiki",m:5942,h:"Mã không cố định → tính qua nhóm Online"},
+  // Ẩm thực
+  {n:"Phúc Long",m:5814},{n:"Highlands Coffee",m:5814},{n:"Starbucks",m:5814},{n:"The Coffee House",m:5814},
+  {n:"Katinat",m:5814},{n:"Trung Nguyên",m:5814},{n:"McDonald's",m:5814},{n:"KFC",m:5814},{n:"Lotteria",m:5814},
+  {n:"Jollibee",m:5814},{n:"Pizza 4P's",m:5812},{n:"Golden Gate (Kichi/Gogi/Manwah)",m:5812},
+  {n:"Nhà hàng (chung)",m:5812},{n:"Quán bar / pub",m:5813},
+  // Siêu thị / tiện lợi (KHÔNG thuộc nhóm nào)
+  {n:"7-Eleven",m:5499,h:"Cửa hàng tiện lợi (5499) — không thuộc nhóm nào của Max"},
+  {n:"FamilyMart",m:5499,h:"Tiện lợi (5499) — không thuộc nhóm nào"},
+  {n:"Circle K",m:5499,h:"Tiện lợi (5499) — không thuộc nhóm nào"},
+  {n:"GS25",m:5499,h:"Tiện lợi (5499) — không thuộc nhóm nào"},
+  {n:"WinMart",m:5411,h:"Siêu thị (5411) — không thuộc nhóm nào"},
+  {n:"Co.opmart",m:5411,h:"Siêu thị (5411) — không thuộc nhóm nào"},
+  {n:"Bách Hoá Xanh",m:5411,h:"Siêu thị (5411) — không thuộc nhóm nào"},
+  {n:"King Food Market",m:5411,h:"Siêu thị (5411) — không thuộc nhóm nào"},
+  // Di chuyển (KHÔNG thuộc nhóm nào)
+  {n:"Grab",m:4121,h:"Xe/giao đồ ăn (4121) — không thuộc nhóm nào của Max"},
+  {n:"Be",m:4121,h:"Xe (4121) — không thuộc nhóm nào"},
+  {n:"Xanh SM",m:4121,h:"Taxi (4121) — không thuộc nhóm nào"},
+  {n:"Xăng Petrolimex",m:5541,h:"Trạm xăng (5541) — không thuộc nhóm nào"},
+  // Giải trí
+  {n:"CGV",m:7832},{n:"Lotte Cinema",m:7832},{n:"Galaxy Cinema",m:7832},
+  {n:"The New Gym",m:7997},{n:"California Fitness",m:7997},{n:"Citigym",m:7997},
+  // Du lịch
+  {n:"Vietnam Airlines",m:4511},{n:"Vietjet Air",m:4511},{n:"Bamboo Airways",m:4511},
+  {n:"Agoda",m:4722},{n:"Booking.com",m:4722},{n:"Traveloka",m:4722},{n:"Khách sạn (chung)",m:7011},
+  // Số / online quốc tế
+  {n:"Apple (App Store/iCloud)",m:5734,h:"Phần mềm/dịch vụ số → tính qua nhóm Online"},
+  {n:"Netflix",m:5815},{n:"Spotify",m:5815},{n:"YouTube Premium",m:5815},
+  {n:"Anthropic / Claude",m:5734,h:"Phần mềm (5734) → chỉ tính qua nhóm Online"},
+  {n:"Microsoft / Xbox",m:5816},
+  // Loại trừ
+  {n:"Google Ads",m:7311,h:"Quảng cáo — Max loại trừ, chỉ VIB Cash Back hoàn"},
+  {n:"Facebook Ads",m:7311,h:"Quảng cáo — Max loại trừ, chỉ VIB Cash Back hoàn"},
+  {n:"Hoá đơn điện (EVN)",m:4900,h:"Tiện ích — bị loại trừ"},
+  {n:"Internet / truyền hình",m:4814,h:"Viễn thông — bị loại trừ"},
+  {n:"Bảo hiểm (Prudential/Manulife)",m:6300,h:"Bảo hiểm — Max loại trừ, VIB Cash Back/Family hoàn"},
+  // Y tế / giáo dục
+  {n:"FPT Long Châu (nhà thuốc)",m:5912,h:"Nhà thuốc — không thuộc nhóm Max, nhưng Family Link (y tế) hoàn"},
+  {n:"Pharmacity",m:5912},{n:"Bệnh viện / phòng khám",m:8011},{n:"Trường học / học phí",m:8211},
+];
+let activeStore=null;
+let USER_STORES=[];
+const LS_KEY="mcc_user_stores_v1";
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function loadUser(){ try{const r=localStorage.getItem(LS_KEY); USER_STORES=r?JSON.parse(r):[];}catch(e){USER_STORES=[];} }
+function saveUser(){ try{localStorage.setItem(LS_KEY,JSON.stringify(USER_STORES));}catch(e){} }
+function allStores(){ return USER_STORES.concat(STORES); } // cửa hàng của user ưu tiên khớp trước
+function buildStoreList(){
+  document.getElementById("storelist").innerHTML=allStores().map(s=>`<option value="${esc(s.n)}">`).join("");
+}
+function lookupStore(txt){
+  txt=txt.trim().toLowerCase(); if(!txt)return null;
+  const A=allStores();
+  return A.find(s=>s.n.toLowerCase()===txt)
+      || A.find(s=>s.n.toLowerCase().startsWith(txt))
+      || A.find(s=>s.n.toLowerCase().includes(txt));
+}
+function renderUserChips(){
+  const el=document.getElementById("userchips");
+  if(!USER_STORES.length){el.innerHTML="";return;}
+  el.innerHTML=USER_STORES.map((s,i)=>`<span class="uchip">${esc(s.n)} <b>${String(s.m).padStart(4,"0")}</b> <button data-i="${i}" title="Xoá" aria-label="Xoá">×</button></span>`).join("");
+  el.querySelectorAll("button").forEach(b=>b.onclick=()=>{USER_STORES.splice(+b.dataset.i,1);saveUser();buildStoreList();renderUserChips();});
+}
+function addUserStore(){
+  const name=document.getElementById("addName").value.trim();
+  const mccRaw=document.getElementById("addMcc").value.trim();
+  const cat=document.getElementById("addCat").value;
+  if(!name)return;
+  const m=/^\d{1,4}$/.test(mccRaw)?parseInt(mccRaw,10):parseInt(cat,10);
+  USER_STORES=USER_STORES.filter(s=>s.n.toLowerCase()!==name.toLowerCase()); // tránh trùng
+  USER_STORES.unshift({n:name,m,user:true});
+  saveUser();buildStoreList();renderUserChips();
+  document.getElementById("addName").value="";document.getElementById("addMcc").value="";
+  const se=document.getElementById("store"); if(se)se.value=name;
+  applyStore({n:name,m});
+}
+
+/* ===================== Render ===================== */
+const fmt=n=>n.toLocaleString("vi-VN");
+const EXAMPLES=[[5812,"Nhà hàng"],[6300,"Bảo hiểm"],[7311,"FB/Google Ads"],[7997,"Gym"],[5942,"Nhà sách"],[7011,"Khách sạn"],[8211,"Học phí"],[4900,"Điện nước"]];
+const BADGE={mcc:'<span class="badge b-mcc">MCC</span>',cat:'<span class="badge b-cat">Nhóm ngành</span>',merchant:'<span class="badge b-mer">Merchant</span>'};
+
+function chipRow(){
+  const c=document.getElementById("chips");
+  c.innerHTML=EXAMPLES.map(([m,l])=>`<button class="chip" data-m="${m}"><b>${String(m).padStart(4,"0")}</b> ${l}</button>`).join("");
+  c.querySelectorAll(".chip").forEach(b=>b.onclick=()=>setMCC(b.dataset.m));
+}
+function setMCC(v){activeStore=null;const s=document.getElementById("store");if(s)s.value="";document.getElementById("mcc").value=String(v).padStart(4,"0");render();}
+function applyStore(s){activeStore=s;document.getElementById("mcc").value=String(s.m).padStart(4,"0");render();}
+
+function rowHTML(card,res,isTop){
+  return `<div class="crow ${isTop?'top':''}">
+    <div class="main">
+      ${isTop?'<div class="topflag">★ Cao nhất</div>':''}
+      <div class="bank">${card.bank}</div>
+      <div class="cn">${card.name}</div>
+      <div class="lbl">${res.label}</div>
+      <div class="meta">${res.meta}</div>
+    </div>
+    <div class="right">
+      <div class="rt ${card.kind==='point'?'pts':''}">${res.rateText}</div>
+      ${BADGE[card.conf]}
+    </div>
+  </div>`;
+}
+
+function render(){
+  const raw=document.getElementById("mcc").value.trim();
+  const box=document.getElementById("result");
+  if(!/^\d{1,4}$/.test(raw)){box.innerHTML=`<div class="empty">Nhập mã MCC gồm 1–4 chữ số để tra cứu.</div>`;return;}
+  const mcc=parseInt(raw,10);
+  const [nmVi,nmEn]=describe(mcc);
+  const g=groupOf(mcc);
+  const online=isOnlineEligible(mcc);
+
+  const fromStore=activeStore&&activeStore.m===mcc;
+  let html=`<div class="mcchead">
+    <div class="codebox">${String(mcc).padStart(4,"0")}</div>
+    <div class="desc">
+      ${fromStore?`<div class="bank" style="color:var(--accent-ink);font-weight:700">${esc(activeStore.n)}</div>`:''}
+      <div class="nm">${nmVi}</div><div class="en">${nmEn}</div></div>
+    <span class="grouppill">${GROUP_VI[g]}</span>
+  </div>`;
+  if(fromStore&&activeStore.h){
+    html+=`<div class="callout" style="background:var(--warn-soft);color:var(--warn)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><div>${activeStore.h}</div></div>`;
+  }
+
+  // Thu thập kết quả
+  const cash=[],point=[];
+  CARDS.forEach(card=>{
+    const r=card.match(mcc,g,online);
+    if(!r)return;
+    (card.kind==="point"?point:cash).push({card,res:r});
+  });
+  cash.sort((a,b)=>b.res.rate-a.res.rate);
+  point.sort((a,b)=>b.res.rate-a.res.rate);
+
+  // Loại trừ đặc biệt cho VIB Max
+  const maxExcluded=!!EXCL_NOTABLE[mcc];
+
+  if(cash.length){
+    html+=`<div><div class="section-h"><span class="st">💵 Hoàn tiền mặt</span><span class="ss">xếp theo % cao nhất</span></div>
+      <div class="rows" style="margin-top:12px">${cash.map((x,i)=>rowHTML(x.card,x.res,i===0)).join("")}</div></div>`;
+  }else{
+    html+=`<div class="callout bad"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+      <div>Không thẻ nào trong danh sách hoàn <b>tiền mặt</b> cho MCC ${String(mcc).padStart(4,"0")} (${GROUP_VI[g]}). Nhóm này thường bị loại trừ hoặc chỉ còn mức cơ bản ~0,1%.</div></div>`;
+  }
+
+  if(point.length){
+    html+=`<div><div class="section-h"><span class="st">🎁 Tích điểm / xu</span><span class="ss">quy đổi khác nhau, không so trực tiếp với %</span></div>
+      <div class="rows" style="margin-top:12px">${point.map(x=>rowHTML(x.card,x.res,false)).join("")}</div></div>`;
+  }
+
+  // Note bảo hiểm/quảng cáo: Max loại trừ nhưng Cash Back lại hoàn
+  if(maxExcluded){
+    const extra = g==="insurance" ? ' Muốn hoàn bảo hiểm thì VIB Cash Back / Family Link mới tính.'
+      : g==="ads" ? ' Muốn hoàn quảng cáo online thì VIB Cash Back mới tính.' : '';
+    html+=`<div class="callout bad"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+      <div><b>VIB Max Card loại trừ</b> MCC này (${EXCL_NOTABLE[mcc]}).${extra}</div></div>`;
+  }
+
+  // Thẻ theo cửa hàng — chỉ hiện khi liên quan (mua sắm/online/ăn uống/giải trí)
+  if(["shopping","dining","entertainment","grocery","other"].includes(g)||online){
+    html+=`<div><div class="section-h"><span class="st">🏬 Ưu đãi theo cửa hàng</span><span class="ss">không xác định bằng MCC</span></div>
+      <div class="muted-block" style="margin-top:12px">${MERCHANT_CARDS.map(c=>`<div><b>${c.bank} ${c.name}</b> — ${c.deal}</div>`).join('<div style="height:6px"></div>')}</div></div>`;
+  }
+
+  // Thẻ chưa đủ dữ liệu
+  html+=`<div class="muted-block"><b>Chưa đủ dữ liệu để phân loại theo MCC:</b> ${UNKNOWN_CARDS.map(c=>`${c.bank} ${c.name} (${c.note})`).join("; ")}.</div>`;
+
+  box.innerHTML=html;
+}
+
+const storeEl=document.getElementById("store");
+storeEl.addEventListener("input",()=>{const s=lookupStore(storeEl.value);if(s)applyStore(s);});
+storeEl.addEventListener("change",()=>{const s=lookupStore(storeEl.value);if(s){storeEl.value=s.n;applyStore(s);}});
+document.getElementById("mcc").addEventListener("input",()=>{activeStore=null;if(storeEl)storeEl.value="";render();});
+document.getElementById("addBtn").addEventListener("click",addUserStore);
+document.getElementById("addName").addEventListener("keydown",e=>{if(e.key==="Enter")addUserStore();});
+document.getElementById("addMcc").addEventListener("keydown",e=>{if(e.key==="Enter")addUserStore();});
+loadUser();
+buildStoreList();
+renderUserChips();
+chipRow();
+setMCC(5812);
+</script>
+</body>
+</html>
