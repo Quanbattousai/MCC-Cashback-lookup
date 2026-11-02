@@ -78,15 +78,23 @@
 
   .result{margin-top:20px;display:flex;flex-direction:column;gap:18px}
 
-  .mcchead{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);
-    border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px}
-  .codebox{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--ink);
-    background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;line-height:1}
+  .mcchead{display:flex;align-items:center;gap:14px;background:var(--accent-ink);color:var(--surface);
+    border-radius:var(--radius);box-shadow:0 2px 4px rgba(6,96,63,.18),0 10px 28px rgba(6,96,63,.28);padding:16px 18px}
+  .codebox{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--surface);
+    background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);border-radius:12px;padding:12px 14px;line-height:1}
   .mcchead .desc{min-width:0;flex:1}
   .mcchead .desc .nm{font-weight:700;font-size:16px;line-height:1.3}
-  .mcchead .desc .en{font-size:12.5px;color:var(--muted);margin-top:1px}
-  .grouppill{font-size:11.5px;font-weight:600;color:var(--accent-ink);background:var(--accent-soft);
-    padding:3px 9px;border-radius:999px;white-space:nowrap}
+  .mcchead .desc .en{font-size:12.5px;opacity:.78;margin-top:1px}
+  .mcchead .desc .bank{font-size:12px;font-weight:700;opacity:.9}
+  .grouppill{display:inline-block;margin-top:8px;font-size:13.5px;font-weight:800;letter-spacing:.01em;
+    color:var(--accent-ink);background:var(--surface);padding:5px 12px;border-radius:999px}
+  /* Mobile: ô kết luận ghim ở đầu màn hình khi cuộn */
+  @media (max-width:700px){
+    .mcchead{position:sticky;top:max(8px,env(safe-area-inset-top,0px));z-index:10;padding:12px 14px;gap:12px}
+    .codebox{font-size:22px;padding:10px 12px}
+    .mcchead .desc .en{display:none}
+    .grouppill{margin-top:5px;font-size:13px;padding:4px 11px}
+  }
 
   .section-h{display:flex;align-items:baseline;gap:8px;margin:0 2px -6px}
   .section-h .st{font-size:13px;font-weight:700;letter-spacing:.02em}
@@ -551,9 +559,9 @@ function render(){
   let html=`<div class="mcchead">
     <div class="codebox">${String(mcc).padStart(4,"0")}</div>
     <div class="desc">
-      ${fromStore?`<div class="bank" style="color:var(--accent-ink);font-weight:700">${esc(activeStore.n)}</div>`:''}
-      <div class="nm">${nmVi}</div><div class="en">${nmEn}</div></div>
-    <span class="grouppill">${GROUP_VI[g]}</span>
+      ${fromStore?`<div class="bank">${esc(activeStore.n)}</div>`:''}
+      <div class="nm">${nmVi}</div><div class="en">${nmEn}</div>
+      <span class="grouppill">Nhóm: ${GROUP_VI[g]}</span></div>
   </div>`;
   if(fromStore&&activeStore.h){
     html+=`<div class="callout" style="background:var(--warn-soft);color:var(--warn)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><div>${activeStore.h}</div></div>`;
