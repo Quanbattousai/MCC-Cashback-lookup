@@ -41,9 +41,6 @@
     color-scheme:dark;
   }
   *{box-sizing:border-box}
-  /* Không cho kéo ngang/chéo; clip (không phải hidden) để position:sticky vẫn chạy */
-  html,body{max-width:100%;overflow-x:clip;overscroll-behavior-x:none}
-  body{touch-action:pan-y pinch-zoom}
   body{background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.5;
     -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
   .wrap{max-width:620px;margin:0 auto;
@@ -81,61 +78,15 @@
 
   .result{margin-top:20px;display:flex;flex-direction:column;gap:18px}
 
-  .mcchead{display:flex;align-items:center;gap:14px;background:var(--accent-ink);color:var(--surface);
-    border-radius:var(--radius);box-shadow:0 2px 4px rgba(6,96,63,.18),0 10px 28px rgba(6,96,63,.28);padding:16px 18px}
-  .codebox{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--surface);
-    background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);border-radius:12px;padding:12px 14px;line-height:1}
+  .mcchead{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px}
+  .codebox{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--ink);
+    background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;line-height:1}
   .mcchead .desc{min-width:0;flex:1}
   .mcchead .desc .nm{font-weight:700;font-size:16px;line-height:1.3}
-  .mcchead .desc .en{font-size:12.5px;opacity:.78;margin-top:1px}
-  .mcchead .desc .bank{font-size:12px;font-weight:700;opacity:.9}
-  .grouppill{display:inline-block;margin-top:8px;font-size:13.5px;font-weight:800;letter-spacing:.01em;
-    color:var(--accent-ink);background:var(--surface);padding:5px 12px;border-radius:999px}
-  .mcchead{flex-wrap:wrap}
-  .mcchead .best{flex:1 1 100%;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.14);
-    border:1px solid rgba(255,255,255,.26);border-radius:12px;padding:8px 12px}
-  .mcchead .best{flex-wrap:wrap;row-gap:2px}
-  .mcchead .bflag{flex:1 1 100%;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;opacity:.9}
-  .mcchead .bname{flex:1;min-width:0;font-weight:700;font-size:14px;line-height:1.25}
-  .tiebtn{font:inherit;font-size:12px;font-weight:600;color:inherit;background:rgba(255,255,255,.18);
-    border:1px solid rgba(255,255,255,.32);border-radius:999px;padding:1px 9px;margin-left:4px;cursor:pointer;white-space:nowrap}
-  .tiebtn .car{display:inline-block;transition:transform .15s}
-  .tiebtn[aria-expanded="true"] .car{transform:rotate(180deg)}
-  .tielist{flex:1 1 100%;max-height:34vh;overflow:auto;border-top:1px solid rgba(255,255,255,.26);margin-top:4px;padding-top:6px}
-  .tielist[hidden]{display:none}
-  .tierow{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:4px 0;font-size:13px}
-  .tierow em{display:block;font-style:normal;font-size:11.5px;opacity:.78}
-  .tierow .tr{font-family:var(--mono);font-weight:700;white-space:nowrap}
-  .mcchead .brate{font-family:var(--mono);font-weight:700;font-size:18px;white-space:nowrap}
-  .mcchead .best.none .bname{font-weight:600;font-size:13px;opacity:.9}
-  #headbar:empty{display:none}
-  .sfield{position:relative}
-  .sfield #store{padding:16px 100px 16px 14px;font-size:17px;min-height:54px}
-  .clr{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:44px;height:44px;border:none;border-radius:50%;
-    background:transparent;color:var(--muted);font-size:26px;line-height:1;cursor:pointer;display:none;
-    align-items:center;justify-content:center;padding:0;-webkit-tap-highlight-color:transparent;isolation:isolate}
-  .clr::before{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--line);z-index:-1}
-  .clr:hover,.clr:active{color:var(--ink)}
-  #store:not(:placeholder-shown)~.clr{display:flex}
-  .tick{position:absolute;right:52px;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;
-    background:var(--accent);color:#fff;display:none;align-items:center;justify-content:center;font-size:19px;font-weight:800}
-  .tick.on{display:flex}
-  .mcchead .bank .ok{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;
-    background:var(--surface);color:var(--accent-ink);font-size:11px;font-weight:800;margin-right:5px;vertical-align:1px}
-  /* Mobile: ô kết luận ghim cố định ở đầu trang, luôn nằm trong viewport */
-  @media (max-width:700px){
-    .wrap{display:flex;flex-direction:column}
-    .wrap>.tag{align-self:flex-start}
-    /* gọn phần đầu để ô nhập + ô kết luận cùng nằm trên bàn phím */
-    .wrap{padding-block:16px 40px}
-    h1{font-size:20px;margin:10px 0 12px}
-    .sub{display:none}
-    #headbar{order:-1;position:sticky;top:max(8px,env(safe-area-inset-top,0px));z-index:10;margin-bottom:14px}
-    .mcchead{padding:12px 14px;gap:12px}
-    .codebox{font-size:22px;padding:10px 12px}
-    .mcchead .desc .en{display:none}
-    .grouppill{margin-top:5px;font-size:13px;padding:4px 11px}
-  }
+  .mcchead .desc .en{font-size:12.5px;color:var(--muted);margin-top:1px}
+  .grouppill{font-size:11.5px;font-weight:600;color:var(--accent-ink);background:var(--accent-soft);
+    padding:3px 9px;border-radius:999px;white-space:nowrap}
 
   .section-h{display:flex;align-items:baseline;gap:8px;margin:0 2px -6px}
   .section-h .st{font-size:13px;font-weight:700;letter-spacing:.02em}
@@ -223,7 +174,7 @@
 
   <div class="field">
     <label for="store">Tìm theo tên cửa hàng</label>
-    <div class="sfield"><input id="store" list="storelist" placeholder="Uniqlo, Muji, Grab, Phúc Long…" autocomplete="off" aria-label="Tên cửa hàng"><span class="tick" id="tick" aria-label="Đã tìm thấy cửa hàng">✓</span><button type="button" class="clr" id="storeClear" aria-label="Xoá tên cửa hàng">×</button></div>
+    <input id="store" list="storelist" placeholder="Uniqlo, Muji, Grab, Phúc Long…" autocomplete="off" aria-label="Tên cửa hàng">
     <datalist id="storelist"></datalist>
     <div class="orline"><span>hoặc nhập mã trực tiếp</span></div>
     <label for="mcc">Mã MCC (4 chữ số)</label>
@@ -258,7 +209,6 @@
     </div>
   </details>
 
-  <div id="headbar"></div>
   <div class="result" id="result"></div>
 
   <details class="learn">
@@ -307,7 +257,7 @@ const G_TRANSPORT=new Set([4111,4112,4121,4131,4784,7523]);
 const G_TRAVEL=new Set([7011,4511,4722,4411,7512]); for(let m=3000;m<=3999;m++)G_TRAVEL.add(m);
 const G_HEALTH=new Set([8011,8021,8041,8050,8062,8071,8099,5912,7298]);
 const G_EDU=new Set([8211,8220,8241,8299]);
-const G_SHOP_EXTRA=new Set([5732,5722,5712,5733,5735,5045,5211]);
+const G_SHOP_EXTRA=new Set([5732,5722,5712,5733,5735,5045,5211,5399]);
 function groupOf(mcc){
   if(VIB_AM_THUC.has(mcc))return"dining";
   if(G_GROCERY.has(mcc))return"grocery";
@@ -331,6 +281,7 @@ const GROUP_VI={dining:"Ẩm thực",grocery:"Siêu thị / tạp hoá",fuel:"X�
 /* ===================== Từ điển mô tả MCC ===================== */
 const MCC_DESC={
   10:["Hàng không (mã hãng)","Airline"],70:["Hàng không (mã hãng)","Airline"],46:["Bán lẻ khác","Misc. retail"],
+  2741:["Xuất bản / in ấn","Misc publishing & printing"],
   3000:["Hãng hàng không","Airlines"],3501:["Khách sạn","Hotels"],3998:["Khách sạn","Lodging"],
   4111:["Giao thông công cộng","Transit"],4112:["Tàu hoả","Railways"],4121:["Taxi / xe công nghệ (Grab…)","Taxicabs / rideshare"],
   4411:["Tàu / du thuyền","Cruise lines"],4511:["Hàng không","Airlines"],4722:["Đại lý du lịch","Travel agencies"],
@@ -338,7 +289,7 @@ const MCC_DESC={
   4816:["Dịch vụ mạng / internet","Computer network"],4899:["Truyền hình cáp","Cable / pay TV"],4900:["Điện / nước / gas","Utilities"],
   5045:["Máy tính / thiết bị","Computers"],5094:["Trang sức / kim hoàn","Jewelry"],5111:["Văn phòng phẩm","Stationery"],
   5200:["Đồ gia dụng / xây dựng","Home supply"],5211:["Vật liệu xây dựng","Building materials"],5300:["Bán sỉ / kho","Wholesale"],
-  5311:["Cửa hàng bách hoá","Department stores"],5331:["Cửa hàng tổng hợp","Variety stores"],
+  5311:["Cửa hàng bách hoá","Department stores"],5331:["Cửa hàng tổng hợp","Variety stores"],5399:["Bán lẻ tổng hợp (hay gặp ở Alipay nước ngoài)","Misc general merchandise"],
   5411:["Siêu thị / tạp hoá","Grocery / supermarket"],5422:["Thực phẩm tươi","Food — meat"],5451:["Sữa / đồ uống","Dairy"],
   5462:["Tiệm bánh","Bakeries"],5499:["Cửa hàng thực phẩm / tiện lợi","Convenience / food"],
   5511:["Ô tô (đại lý)","Car dealers"],5541:["Trạm xăng","Service stations"],5542:["Trạm xăng tự động","Automated fuel"],
@@ -349,7 +300,7 @@ const MCC_DESC={
   5722:["Đồ gia dụng điện","Appliances"],5732:["Điện tử","Electronics"],5733:["Nhạc cụ","Music stores"],
   5734:["Phần mềm máy tính","Computer software"],5735:["Đĩa nhạc / phim","Record stores"],
   5811:["Dịch vụ tiệc / catering","Caterers"],5812:["Nhà hàng","Restaurants"],5813:["Quán bar / pub","Bars"],
-  5814:["Quán ăn nhanh","Fast food"],5815:["Nội dung số (nhạc/phim)","Digital media"],5816:["Game kỹ thuật số","Digital games"],
+  5814:["Quán ăn nhanh","Fast food"],5815:["Nội dung số (nhạc/phim)","Digital media"],5816:["Game kỹ thuật số","Digital games"],5818:["Hàng hoá số (Xbox, game, app)","Digital goods"],
   5912:["Nhà thuốc","Pharmacy"],5921:["Cửa hàng rượu bia","Liquor stores"],5941:["Đồ thể thao","Sporting goods"],
   5942:["Nhà sách","Book stores"],5943:["Văn phòng phẩm","Office supply"],5944:["Trang sức / đồng hồ","Jewelry / watches"],
   5945:["Đồ chơi / game","Toy / hobby"],5946:["Máy ảnh","Camera stores"],5947:["Quà tặng / lưu niệm","Gift / novelty"],
@@ -532,16 +483,12 @@ function allStores(){ return USER_STORES.concat(STORES); } // cửa hàng của 
 function buildStoreList(){
   document.getElementById("storelist").innerHTML=allStores().map(s=>`<option value="${esc(s.n)}">`).join("");
 }
-// Bỏ dấu + hạ chữ thường: gõ "phuc long" vẫn ra "Phúc Long"
-const norm=s=>String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/Đ/g,"d").toLowerCase().trim();
 function lookupStore(txt){
-  txt=norm(txt); if(!txt)return null;
-  const A=allStores().map(s=>({s,k:norm(s.n)}));
-  const words=txt.split(/\s+/);
-  return (A.find(x=>x.k===txt)
-      || A.find(x=>x.k.startsWith(txt))
-      || A.find(x=>x.k.includes(txt))
-      || A.find(x=>words.every(w=>x.k.includes(w))) || {}).s || null;
+  txt=txt.trim().toLowerCase(); if(!txt)return null;
+  const A=allStores();
+  return A.find(s=>s.n.toLowerCase()===txt)
+      || A.find(s=>s.n.toLowerCase().startsWith(txt))
+      || A.find(s=>s.n.toLowerCase().includes(txt));
 }
 function renderUserChips(){
   const el=document.getElementById("userchips");
@@ -595,21 +542,20 @@ function rowHTML(card,res,isTop){
 function render(){
   const raw=document.getElementById("mcc").value.trim();
   const box=document.getElementById("result");
-  const bar=document.getElementById("headbar"), tick=document.getElementById("tick");
-  if(!/^\d{1,4}$/.test(raw)){bar.innerHTML="";tick.classList.remove("on");box.innerHTML=`<div class="empty">Nhập mã MCC gồm 1–4 chữ số để tra cứu.</div>`;return;}
+  if(!/^\d{1,4}$/.test(raw)){box.innerHTML=`<div class="empty">Nhập mã MCC gồm 1–4 chữ số để tra cứu.</div>`;return;}
   const mcc=parseInt(raw,10);
   const [nmVi,nmEn]=describe(mcc);
   const g=groupOf(mcc);
   const online=isOnlineEligible(mcc);
 
   const fromStore=activeStore&&activeStore.m===mcc;
-  tick.classList.toggle("on",!!fromStore);
-  let html="";
-  const headTop=`<div class="codebox">${String(mcc).padStart(4,"0")}</div>
+  let html=`<div class="mcchead">
+    <div class="codebox">${String(mcc).padStart(4,"0")}</div>
     <div class="desc">
-      ${fromStore?`<div class="bank"><span class="ok">✓</span>${esc(activeStore.n)}</div>`:''}
-      <div class="nm">${nmVi}</div><div class="en">${nmEn}</div>
-      <span class="grouppill">Nhóm: ${GROUP_VI[g]}</span></div>`;
+      ${fromStore?`<div class="bank" style="color:var(--accent-ink);font-weight:700">${esc(activeStore.n)}</div>`:''}
+      <div class="nm">${nmVi}</div><div class="en">${nmEn}</div></div>
+    <span class="grouppill">${GROUP_VI[g]}</span>
+  </div>`;
   if(fromStore&&activeStore.h){
     html+=`<div class="callout" style="background:var(--warn-soft);color:var(--warn)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><div>${activeStore.h}</div></div>`;
   }
@@ -623,19 +569,6 @@ function render(){
   });
   cash.sort((a,b)=>b.res.rate-a.res.rate);
   point.sort((a,b)=>b.res.rate-a.res.rate);
-
-  // Thẻ hoàn tiền cao nhất — hiện trong ô ghim
-  let best;
-  if(cash.length){
-    const t=cash[0], tied=cash.filter(x=>x.res.rate===t.res.rate), ties=tied.length-1;
-    best=`<div class="best"><span class="bflag">★ Cao nhất</span>
-      <span class="bname">${t.card.bank} ${t.card.name}${ties?` <button type="button" class="tiebtn" aria-expanded="false" aria-controls="tielist">+${ties} thẻ ngang <span class="car">▾</span></button>`:''}</span>
-      <span class="brate">${t.res.rateText}</span>
-      ${ties?`<div class="tielist" id="tielist" hidden>${tied.map(x=>`<div class="tierow"><span><b>${x.card.bank} ${x.card.name}</b><em>${x.res.label}</em></span><span class="tr">${x.res.rateText}</span></div>`).join("")}</div>`:''}</div>`;
-  }else{
-    best=`<div class="best none"><span class="bname">Không thẻ nào hoàn tiền mặt cho MCC này</span></div>`;
-  }
-  bar.innerHTML=`<div class="mcchead">${headTop}${best}</div>`;
 
   // Loại trừ đặc biệt cho VIB Max
   const maxExcluded=!!EXCL_NOTABLE[mcc];
@@ -673,32 +606,8 @@ function render(){
   box.innerHTML=html;
 }
 
-document.getElementById("headbar").addEventListener("click",e=>{
-  const b=e.target.closest(".tiebtn"); if(!b)return;
-  const open=b.getAttribute("aria-expanded")!=="true";
-  b.setAttribute("aria-expanded",open);
-  document.getElementById("tielist").hidden=!open;
-});
-document.getElementById("storeClear").addEventListener("click",()=>{
-  const hadStore=!!activeStore;
-  activeStore=null;
-  storeEl.value="";
-  if(hadStore)document.getElementById("mcc").value=""; // MCC này do cửa hàng suy ra → xoá luôn
-  render();
-  storeEl.focus();
-});
-// iOS: bàn phím bật lên làm visual viewport bị đẩy lệch → giữ ô kết luận luôn dính mép trên màn hình thấy được
-if(window.visualViewport){
-  const vv=window.visualViewport, hb=document.getElementById("headbar");
-  const pin=()=>{hb.style.transform=(vv.offsetTop>1&&matchMedia("(max-width:700px)").matches)?`translateY(${Math.round(vv.offsetTop)}px)`:"";};
-  vv.addEventListener("scroll",pin);vv.addEventListener("resize",pin);
-}
 const storeEl=document.getElementById("store");
-storeEl.addEventListener("input",()=>{
-  const s=lookupStore(storeEl.value);
-  if(s)applyStore(s);
-  else if(activeStore){activeStore=null;render();} // gõ tiếp ra tên không có → bỏ dấu tick cũ
-});
+storeEl.addEventListener("input",()=>{const s=lookupStore(storeEl.value);if(s)applyStore(s);});
 storeEl.addEventListener("change",()=>{const s=lookupStore(storeEl.value);if(s){storeEl.value=s.n;applyStore(s);}});
 document.getElementById("mcc").addEventListener("input",()=>{activeStore=null;if(storeEl)storeEl.value="";render();});
 document.getElementById("addBtn").addEventListener("click",addUserStore);
