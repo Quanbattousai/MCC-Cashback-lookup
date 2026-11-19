@@ -157,6 +157,18 @@
   .uchip b{font-family:var(--mono);color:var(--muted);font-weight:500}
   .uchip button{border:none;background:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0 3px}
   .uchip button:hover{color:var(--bad)}
+  .summary{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin-top:14px;
+    background:var(--surface);border:1.5px solid color-mix(in srgb,var(--accent) 48%,var(--line));
+    border-radius:14px;box-shadow:var(--shadow);padding:12px 15px;display:flex;flex-direction:column;gap:6px}
+  .summary .s1{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .summary .scode{font-family:var(--mono);font-weight:700;font-size:17px;line-height:1}
+  .summary .sname{font-size:12.5px;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .summary .sbest{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;font-size:13.5px}
+  .summary .sbest .lead{font-weight:700;color:var(--accent-ink)}
+  .summary .sbest .rate{font-family:var(--mono);font-weight:700;color:var(--accent-ink)}
+  .summary .sbest .sub{color:var(--muted)}
+  .summary.excl{border-color:color-mix(in srgb,var(--bad) 48%,var(--line))}
+  .summary.excl .sbest .lead{color:var(--bad)}
   .foot{font-size:12px;color:var(--muted);line-height:1.6;text-align:center;margin-top:4px}
   .empty{padding:26px 18px;text-align:center;color:var(--muted);font-size:14px;
     background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
@@ -181,6 +193,8 @@
     <input id="mcc" inputmode="numeric" maxlength="4" placeholder="5812" autocomplete="off" aria-label="Mã MCC">
     <div class="chips" id="chips"></div>
   </div>
+
+  <div class="summary" id="summary" hidden></div>
 
   <details class="learn" id="addbox" style="margin-top:14px">
     <summary>➕ Thêm cửa hàng của bạn</summary>
@@ -336,7 +350,9 @@ function describe(mcc){
    {rate:số để xếp hạng, rateText, label, meta}. kind: 'cash' | 'point' | 'merchant'. */
 // MCC bị loại trừ hẳn / không tính là giao dịch online hưởng ưu đãi (theo thể lệ Max)
 const EXCL_NOTABLE={4900:"tiện ích điện/nước",4814:"viễn thông",4899:"truyền hình cáp",4816:"internet",6300:"bảo hiểm",7311:"quảng cáo online",7399:"dịch vụ doanh nghiệp"};
-function isOnlineEligible(mcc){return !(mcc in EXCL_NOTABLE);}
+// MCC gắn địa điểm, gần như không bao giờ là giao dịch online (taxi, xăng, metro, phí đường, bãi xe)
+const ONLINE_INELIGIBLE=new Set([4121,4111,4112,4131,5541,5542,7523,4784]);
+function isOnlineEligible(mcc){return !(mcc in EXCL_NOTABLE) && !ONLINE_INELIGIBLE.has(mcc);}
 
 const CARDS=[
   /* ---- VIB (map theo MCC) ---- */
@@ -345,7 +361,7 @@ const CARDS=[
      if(EXCL_NOTABLE[mcc])return null; // loại trừ (tiện ích, viễn thông, bảo hiểm, quảng cáo…)
      const c=vibCat(mcc);
      if(c)return{rate:10,rateText:"lên tới 10%",label:c,meta:"Starter 0,5% · Plus 5% · Pro 8% · Elite 10% · trần 0,5–1,5tr/kỳ"};
-     if(online)return{rate:10,rateText:"lên tới 10%",label:"Giao dịch trực tuyến",meta:"Nếu quẹt online · trần 0,5–1,5tr/kỳ"};
+     if(online)return{rate:10,rateText:"lên tới 10%",label:"Giao dịch trực tuyến",onlineCond:true,meta:"Chỉ khi thanh toán online · trần 0,5–1,5tr/kỳ"};
      return null;
    }},
   {bank:"VIB",name:"Super Card",conf:"mcc",kind:"cash",
@@ -369,7 +385,7 @@ const CARDS=[
    }},
   {bank:"VIB",name:"Online Plus 2in1",conf:"mcc",kind:"cash",
    match(mcc,g,online){
-     if(online)return{rate:5,rateText:"5% / 3%",label:"Giao dịch trực tuyến",meta:"5% online quốc tế · 3% trong nước · trần 600k/kỳ"};
+     if(online)return{rate:5,rateText:"5% / 3%",label:"Giao dịch trực tuyến",onlineCond:true,meta:"5% online quốc tế · 3% trong nước · trần 600k/kỳ"};
      return null;
    }},
   /* ---- Techcombank (theo nhóm ngành) ---- */
@@ -389,10 +405,11 @@ const CARDS=[
   {bank:"Techcombank",name:"Spark",conf:"cat",kind:"point",
    match(mcc,g,online){
      if(g==="travel"||g==="shopping"||g==="entertainment")return{rate:80,rateText:"80đ / 1.000đ",label:GROUP_VI[g],meta:"Nhóm ưu tiên (chọn 1) · trần 500k điểm/tháng"};
-     if(g==="dining"||online)return{rate:20,rateText:"20đ / 1.000đ",label:g==="dining"?"Ẩm thực":"Online",meta:"Trần 500k điểm/tháng"};
+     if(g==="dining")return{rate:20,rateText:"20đ / 1.000đ",label:"Ẩm thực",meta:"Trần 500k điểm/tháng"};
+     if(online)return{rate:20,rateText:"20đ / 1.000đ",label:"Online",onlineCond:true,meta:"Chỉ khi quẹt online · trần 500k điểm/tháng"};
      return null;}},
   {bank:"Techcombank",name:"Everyday",conf:"cat",kind:"point",
-   match(mcc,g,online){ if(online)return{rate:8,rateText:"8% / 5%",label:"Online",meta:"8% quốc tế · 5% trong nước (điểm) · tối thiểu 200k/giao dịch"}; return null;}},
+   match(mcc,g,online){ if(online)return{rate:8,rateText:"8% / 5%",label:"Online",onlineCond:true,meta:"8% quốc tế · 5% trong nước (điểm) · tối thiểu 200k/giao dịch"}; return null;}},
   {bank:"Techcombank",name:"Visa Eco",conf:"cat",kind:"point",
    match(mcc,g){ if(g==="insurance"||g==="education")return{rate:3,rateText:"3%",label:GROUP_VI[g],meta:"Điểm thưởng · tối thiểu 1tr/giao dịch · trần 800k điểm/tháng"}; return null;}},
   /* ---- VPBank (tích điểm/nhóm ngành) ---- */
@@ -542,7 +559,8 @@ function rowHTML(card,res,isTop){
 function render(){
   const raw=document.getElementById("mcc").value.trim();
   const box=document.getElementById("result");
-  if(!/^\d{1,4}$/.test(raw)){box.innerHTML=`<div class="empty">Nhập mã MCC gồm 1–4 chữ số để tra cứu.</div>`;return;}
+  const sumEl=document.getElementById("summary");
+  if(!/^\d{1,4}$/.test(raw)){box.innerHTML=`<div class="empty">Nhập mã MCC gồm 1–4 chữ số để tra cứu.</div>`;if(sumEl)sumEl.hidden=true;return;}
   const mcc=parseInt(raw,10);
   const [nmVi,nmEn]=describe(mcc);
   const g=groupOf(mcc);
@@ -561,14 +579,17 @@ function render(){
   }
 
   // Thu thập kết quả
-  const cash=[],point=[];
+  const cash=[],point=[],onlineOpt=[];
   CARDS.forEach(card=>{
     const r=card.match(mcc,g,online);
     if(!r)return;
-    (card.kind==="point"?point:cash).push({card,res:r});
+    if(r.onlineCond) onlineOpt.push({card,res:r});
+    else (card.kind==="point"?point:cash).push({card,res:r});
   });
   cash.sort((a,b)=>b.res.rate-a.res.rate);
   point.sort((a,b)=>b.res.rate-a.res.rate);
+  // hoàn tiền mặt (%) xếp trước tích điểm, rồi mới theo rate
+  onlineOpt.sort((a,b)=>((a.card.kind==="point")-(b.card.kind==="point"))||(b.res.rate-a.res.rate));
 
   // Loại trừ đặc biệt cho VIB Max
   const maxExcluded=!!EXCL_NOTABLE[mcc];
@@ -576,7 +597,7 @@ function render(){
   if(cash.length){
     html+=`<div><div class="section-h"><span class="st">💵 Hoàn tiền mặt</span><span class="ss">xếp theo % cao nhất</span></div>
       <div class="rows" style="margin-top:12px">${cash.map((x,i)=>rowHTML(x.card,x.res,i===0)).join("")}</div></div>`;
-  }else{
+  }else if(!onlineOpt.length){
     html+=`<div class="callout bad"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
       <div>Không thẻ nào trong danh sách hoàn <b>tiền mặt</b> cho MCC ${String(mcc).padStart(4,"0")} (${GROUP_VI[g]}). Nhóm này thường bị loại trừ hoặc chỉ còn mức cơ bản ~0,1%.</div></div>`;
   }
@@ -584,6 +605,11 @@ function render(){
   if(point.length){
     html+=`<div><div class="section-h"><span class="st">🎁 Tích điểm / xu</span><span class="ss">quy đổi khác nhau, không so trực tiếp với %</span></div>
       <div class="rows" style="margin-top:12px">${point.map(x=>rowHTML(x.card,x.res,false)).join("")}</div></div>`;
+  }
+
+  if(onlineOpt.length){
+    html+=`<div><div class="section-h"><span class="st">🌐 Nếu quẹt online</span><span class="ss">chỉ khi thanh toán online / thẻ không hiện diện</span></div>
+      <div class="rows" style="margin-top:12px">${onlineOpt.map(x=>rowHTML(x.card,x.res,false)).join("")}</div></div>`;
   }
 
   // Note bảo hiểm/quảng cáo: Max loại trừ nhưng Cash Back lại hoàn
@@ -604,6 +630,29 @@ function render(){
   html+=`<div class="muted-block"><b>Chưa đủ dữ liệu để phân loại theo MCC:</b> ${UNKNOWN_CARDS.map(c=>`${c.bank} ${c.name} (${c.note})`).join("; ")}.</div>`;
 
   box.innerHTML=html;
+
+  // Thanh tóm tắt dính trên cùng — báo kết quả ngay, khỏi cuộn
+  let sHTML=`<div class="s1"><span class="scode">${String(mcc).padStart(4,"0")}</span><span class="grouppill">${GROUP_VI[g]}</span><span class="sname">${esc(fromStore?activeStore.n:nmVi)}</span></div>`;
+  if(cash.length){
+    const t=cash[0];
+    sHTML+=`<div class="sbest"><span class="lead">Hoàn tốt nhất:</span><span>${t.card.bank} ${t.card.name}</span><span class="rate">${t.res.rateText}</span><span class="sub">· ${t.res.label}</span></div>`;
+    sumEl.classList.remove("excl");
+  }else if(maxExcluded){
+    sHTML+=`<div class="sbest"><span class="lead">Bị loại trừ — không hoàn tiền mặt</span></div>`;
+    sumEl.classList.add("excl");
+  }else if(point.length){
+    const t=point[0];
+    sHTML+=`<div class="sbest"><span class="lead">Chỉ có tích điểm:</span><span>${t.card.bank} ${t.card.name}</span><span class="rate">${t.res.rateText}</span></div>`;
+    sumEl.classList.remove("excl");
+  }else if(onlineOpt.length){
+    const t=onlineOpt[0];
+    sHTML+=`<div class="sbest"><span class="lead">Nếu quẹt online:</span><span>${t.card.bank} ${t.card.name}</span><span class="rate">${t.res.rateText}</span></div>`;
+    sumEl.classList.remove("excl");
+  }else{
+    sHTML+=`<div class="sbest"><span class="lead">Chỉ 0,1% — không nhóm ưu đãi</span></div>`;
+    sumEl.classList.add("excl");
+  }
+  sumEl.innerHTML=sHTML; sumEl.hidden=false;
 }
 
 const storeEl=document.getElementById("store");
