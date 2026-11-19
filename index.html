@@ -157,9 +157,11 @@
   .uchip b{font-family:var(--mono);color:var(--muted);font-weight:500}
   .uchip button{border:none;background:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0 3px}
   .uchip button:hover{color:var(--bad)}
-  .summary{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin-top:14px;
-    background:var(--surface);border:1.5px solid color-mix(in srgb,var(--accent) 48%,var(--line));
-    border-radius:14px;box-shadow:var(--shadow);padding:12px 15px;display:flex;flex-direction:column;gap:6px}
+  .summary{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;z-index:50;
+    background:var(--surface);border-bottom:1.5px solid color-mix(in srgb,var(--accent) 45%,var(--line));
+    box-shadow:0 2px 12px rgba(20,32,29,.10)}
+  .summary-inner{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:5px;padding-block:10px;
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
   .summary .s1{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
   .summary .scode{font-family:var(--mono);font-weight:700;font-size:17px;line-height:1}
   .summary .sname{font-size:12.5px;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -167,7 +169,7 @@
   .summary .sbest .lead{font-weight:700;color:var(--accent-ink)}
   .summary .sbest .rate{font-family:var(--mono);font-weight:700;color:var(--accent-ink)}
   .summary .sbest .sub{color:var(--muted)}
-  .summary.excl{border-color:color-mix(in srgb,var(--bad) 48%,var(--line))}
+  .summary.excl{border-bottom-color:color-mix(in srgb,var(--bad) 48%,var(--line))}
   .summary.excl .sbest .lead{color:var(--bad)}
   .foot{font-size:12px;color:var(--muted);line-height:1.6;text-align:center;margin-top:4px}
   .empty{padding:26px 18px;text-align:center;color:var(--muted);font-size:14px;
@@ -537,6 +539,11 @@ function chipRow(){
   c.innerHTML=EXAMPLES.map(([m,l])=>`<button class="chip" data-m="${m}"><b>${String(m).padStart(4,"0")}</b> ${l}</button>`).join("");
   c.querySelectorAll(".chip").forEach(b=>b.onclick=()=>setMCC(b.dataset.m));
 }
+// Chừa khoảng trống trên cùng đúng bằng chiều cao thanh cố định
+function reflowSummary(){
+  const w=document.querySelector(".wrap"), s=document.getElementById("summary");
+  if(w) w.style.paddingTop = (s && !s.hidden) ? (s.offsetHeight+14)+"px" : "";
+}
 function setMCC(v){activeStore=null;const s=document.getElementById("store");if(s)s.value="";document.getElementById("mcc").value=String(v).padStart(4,"0");render();}
 function applyStore(s){activeStore=s;document.getElementById("mcc").value=String(s.m).padStart(4,"0");render();}
 
@@ -560,20 +567,15 @@ function render(){
   const raw=document.getElementById("mcc").value.trim();
   const box=document.getElementById("result");
   const sumEl=document.getElementById("summary");
-  if(!/^\d{1,4}$/.test(raw)){box.innerHTML=`<div class="empty">Nhập mã MCC gồm 1–4 chữ số để tra cứu.</div>`;if(sumEl)sumEl.hidden=true;return;}
+  if(!/^\d{1,4}$/.test(raw)){box.innerHTML=`<div class="empty">Nhập mã MCC gồm 1–4 chữ số để tra cứu.</div>`;if(sumEl)sumEl.hidden=true;reflowSummary();return;}
   const mcc=parseInt(raw,10);
   const [nmVi,nmEn]=describe(mcc);
   const g=groupOf(mcc);
   const online=isOnlineEligible(mcc);
 
   const fromStore=activeStore&&activeStore.m===mcc;
-  let html=`<div class="mcchead">
-    <div class="codebox">${String(mcc).padStart(4,"0")}</div>
-    <div class="desc">
-      ${fromStore?`<div class="bank" style="color:var(--accent-ink);font-weight:700">${esc(activeStore.n)}</div>`:''}
-      <div class="nm">${nmVi}</div><div class="en">${nmEn}</div></div>
-    <span class="grouppill">${GROUP_VI[g]}</span>
-  </div>`;
+  // Header chi tiết đã gộp vào thanh tóm tắt dính trên cùng — ở đây chỉ giữ cảnh báo cửa hàng (nếu có)
+  let html="";
   if(fromStore&&activeStore.h){
     html+=`<div class="callout" style="background:var(--warn-soft);color:var(--warn)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><div>${activeStore.h}</div></div>`;
   }
@@ -652,7 +654,7 @@ function render(){
     sHTML+=`<div class="sbest"><span class="lead">Chỉ 0,1% — không nhóm ưu đãi</span></div>`;
     sumEl.classList.add("excl");
   }
-  sumEl.innerHTML=sHTML; sumEl.hidden=false;
+  sumEl.innerHTML='<div class="summary-inner">'+sHTML+'</div>'; sumEl.hidden=false; reflowSummary();
 }
 
 const storeEl=document.getElementById("store");
@@ -667,6 +669,7 @@ buildStoreList();
 renderUserChips();
 chipRow();
 setMCC(5812);
+window.addEventListener("resize",reflowSummary);
 </script>
 </body>
 </html>
